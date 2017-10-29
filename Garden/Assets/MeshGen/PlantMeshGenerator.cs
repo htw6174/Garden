@@ -5,49 +5,74 @@ using UnityEngine;
 public static class PlantMeshGenerator {
 
 	static int circumferencePoints = 50;
-	static int heightPoints = 50;
 
-	public static Mesh GenerateMesh(float height, float stemRadius, float deviation)
+	public static Mesh GenerateMesh(Vector3[] centers, Vector3[] rotations, float stemRadius)
 	{
-		Mesh stem = StemMesh(height, stemRadius, deviation);
+		Mesh stem = StemMesh(centers, rotations, stemRadius);
 
 		return stem;
 	}
 
-	private static Mesh StemMesh(float height, float radius, float deviation = 0f)
+	private static Mesh StemMesh(Vector3[] centers, Vector3[] rotations, float radius)
 	{
 		//Start by generating a cylinder
-		float heightStep = height / heightPoints;
 
 		//Verticies
 		//Start with a point at (0, 0, 0) with a rotation of (-90, 0, 0)
 		//Move forward one unit and place another point
 		//Rotate slightly in every direction
 		//Repeat
-		Vector3[] points = new Vector3[circumferencePoints * heightPoints];
-		float pointY = 0f;
-		float centerX = 0f;
-		float centerZ = 0f;
-		Vector3 rotation = new Vector3(-90, 0, 0);
-		for (int i = 0; i < heightPoints; i++)
+		Vector3[] verts = new Vector3[circumferencePoints * centers.Length];
+		for (int i = 0; i < centers.Length; i++)
 		{
-			//Shift center of stem
-			centerX += Random.Range(-deviation, deviation);
-			centerZ += Random.Range(-deviation, deviation);
+			float centerX = centers[i].x;
+			float centerY = centers[i].y;
+			float centerZ = centers[i].z;
+			float rotX = rotations[i].x;
+			float rotY = rotations[i].y;
+			float rotZ = rotations[i].z;
+			float sinX = Mathf.Sin(rotX);
+			float cosX = Mathf.Cos(rotX);
+			float sinY = Mathf.Sin(rotY);
+			float cosY = Mathf.Cos(rotY);
+			float sinZ = Mathf.Sin(rotZ);
+			float cosZ = Mathf.Cos(rotZ);
+
+			Vector3 xAxis = new Vector3(
+				cosY * cosZ,
+				cosX * sinZ + sinX * sinY * cosZ,
+				sinX * sinZ - cosX * sinY * cosZ
+			);
+			Vector3 yAxis = new Vector3(
+				-cosY * sinZ,
+				cosX * cosZ - sinX * sinY * sinZ,
+				sinX * cosZ + cosX * sinY * sinZ
+			);
+			Vector3 zAxis = new Vector3(
+				sinY,
+				-sinX * cosY,
+				cosX * cosY
+			);
+
 			for (int j = 0; j < circumferencePoints; j++)
 			{
-				float iterToRadians = 2 * Mathf.PI * ((float) j / circumferencePoints);
-				float pointX = Mathf.Sin(iterToRadians) * radius + centerX;
-				float pointZ = Mathf.Cos(iterToRadians) * radius + centerZ;
-				points[(i * circumferencePoints) + j] = new Vector3(pointX, pointY, pointZ);
+				float theta = 2 * Mathf.PI * ((float) j / circumferencePoints);
+				float pointX = Mathf.Sin(theta);
+				float pointY = 0f;
+				float pointZ = Mathf.Cos(theta);
+				//float pointX = (-Mathf.Cos(theta) * normals[i].z) + (Mathf.Sin(theta) * normals[i].y);
+				//float pointY = (-Mathf.Cos(theta) * normals[i].z) + (-Mathf.Sin(theta) * normals[i].x);
+				//float pointZ = (-Mathf.Sin(theta) * normals[i].x) + (Mathf.Cos(theta) * normals[i].y);
+				Vector3 point = xAxis * pointX + yAxis * pointY + zAxis * pointZ;
+				//point = Vector3.ProjectOnPlane(point, normals[i]);
+				verts[(i * circumferencePoints) + j] = (point * radius) + centers[i];
 			}
-			pointY += heightStep;
 		}
 
 		//Triangles
-		int[] triangles = new int[2 * 3 * circumferencePoints * (heightPoints - 1)];
+		int[] tris = new int[2 * 3 * circumferencePoints * (centers.Length - 1)];
 		int t = 0;
-		for (int i = 0; i < heightPoints - 1; i++)
+		for (int i = 0; i < centers.Length - 1; i++)
 		{
 			int a, b, c, d;
 			for (int j = 0; j < circumferencePoints - 1; j++)
@@ -56,31 +81,31 @@ public static class PlantMeshGenerator {
 				b = a + 1;
 				c = a + circumferencePoints;
 				d = c + 1;
-				triangles[t] = a;
-				triangles[t + 1] = b;
-				triangles[t + 2] = c;
-				triangles[t + 3] = c;
-				triangles[t + 4] = b;
-				triangles[t + 5] = d;
+				tris[t] = a;
+				tris[t + 1] = b;
+				tris[t + 2] = c;
+				tris[t + 3] = c;
+				tris[t + 4] = b;
+				tris[t + 5] = d;
 				t += 6;
 			}
 			a = (i * circumferencePoints) + circumferencePoints - 1;
 			b = (i * circumferencePoints);
 			c = a + circumferencePoints;
 			d = b + circumferencePoints;
-			triangles[t] = a;
-			triangles[t + 1] = b;
-			triangles[t + 2] = c;
-			triangles[t + 3] = c;
-			triangles[t + 4] = b;
-			triangles[t + 5] = d;
+			tris[t] = a;
+			tris[t + 1] = b;
+			tris[t + 2] = c;
+			tris[t + 3] = c;
+			tris[t + 4] = b;
+			tris[t + 5] = d;
 			t += 6;
 		}
 
 		//Mesh
 		Mesh mesh = new Mesh();
-		mesh.vertices = points;
-		mesh.triangles = triangles;
+		mesh.vertices = verts;
+		mesh.triangles = tris;
 		mesh.RecalculateNormals();
 
 		return mesh;
