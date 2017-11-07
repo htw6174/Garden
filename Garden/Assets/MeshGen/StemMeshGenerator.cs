@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public static class PlantMeshGenerator {
+public static class StemMeshGenerator {
 
 	static int circumferencePoints = 50;
 
@@ -72,7 +72,7 @@ public static class PlantMeshGenerator {
 		Mesh mesh = new Mesh();
 		mesh.vertices = verts;
 		mesh.triangles = tris;
-		//mesh.RecalculateNormals();
+		mesh.RecalculateNormals();
 
 		return mesh;
 	}
