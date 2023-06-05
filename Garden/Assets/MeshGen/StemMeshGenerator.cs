@@ -4,7 +4,7 @@ using UnityEngine;
 
 public static class StemMeshGenerator {
 
-	static int circumferencePoints = 50;
+	static int circumferencePoints = 20;
 
 	public static Mesh GenerateMesh(Vector3[] centers, Quaternion[] rotations, float stemRadius)
 	{
@@ -21,6 +21,7 @@ public static class StemMeshGenerator {
 		Vector3[] verts = new Vector3[circumferencePoints * centers.Length];
 		for (int i = 0; i < centers.Length; i++)
 		{
+			float radiusScale = 1f - ((float)i / centers.Length);
 			for (int j = 0; j < circumferencePoints; j++)
 			{
 				float theta = 2 * Mathf.PI * ((float) j / circumferencePoints);
@@ -31,7 +32,7 @@ public static class StemMeshGenerator {
 				//Rotate point by the rotation of the growth marker
 				Vector3 point = rotations[i] * new Vector3(pointX, pointY, pointZ);
 				//Factor in radius and offset
-				verts[(i * circumferencePoints) + j] = (point * radius) + centers[i];
+				verts[(i * circumferencePoints) + j] = (point * radius * radiusScale) + centers[i];
 			}
 		}
 
